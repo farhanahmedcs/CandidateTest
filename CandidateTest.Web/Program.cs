@@ -8,7 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
+builder.Services.AddDbContextFactory<CandidateTestDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("CandidateTestDb")));
 
 builder.Services.AddScoped<IUserService, UserService>();
@@ -27,7 +27,7 @@ else
 
 using (var scope = app.Services.CreateScope())
 {
-    var dbContextFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<ApplicationDbContext>>();
+    var dbContextFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<CandidateTestDbContext>>();
     await using var dbContext = await dbContextFactory.CreateDbContextAsync();
     await dbContext.Database.MigrateAsync();
 }

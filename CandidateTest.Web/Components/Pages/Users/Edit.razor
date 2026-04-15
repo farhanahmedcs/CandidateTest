@@ -1,0 +1,142 @@
+@page "/users/edit/{Id:int}"
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Forms
+@inject IUserService UserService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Edit User</PageTitle>
+
+<h1 class="h3 mb-4">Edit User</h1>
+
+@if (isLoading)
+{
+    <p>Loading user...</p>
+}
+else if (Model is null)
+{
+    <div class="alert alert-warning">User not found.</div>
+    <a class="btn btn-outline-secondary" href="/users">Back to Users</a>
+}
+else
+{
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+            @if (!string.IsNullOrWhiteSpace(errorMessage))
+            {
+                <div class="alert alert-danger">@errorMessage</div>
+            }
+
+            @if (isSaved)
+            {
+                <div class="alert alert-success d-flex justify-content-between align-items-center">
+                    <span>User updated successfully.</span>
+                    <a href="/users" class="btn btn-sm btn-outline-success"> <i class="bi bi-backspace"></i> Back to Users</a>
+                </div>
+            }
+            else
+            {
+                <EditForm Model="Model" FormName="edit-user" OnValidSubmit="HandleValidSubmit">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">First Name</label>
+                            <InputText class="form-control" @bind-Value="Model.FirstName" />
+                            <ValidationMessage For="() => Model.FirstName" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Last Name</label>
+                            <InputText class="form-control" @bind-Value="Model.LastName" />
+                            <ValidationMessage For="() => Model.LastName" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Email</label>
+                            <InputText class="form-control" @bind-Value="Model.Email" />
+                            <ValidationMessage For="() => Model.Email" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Date of Birth</label>
+                            <InputDate class="form-control" @bind-Value="Model.DateOfBirth" />
+                        </div>
+                    </div>
+
+                    <div class="mt-4 d-flex gap-2">
+                        <button type="submit" class="btn btn-outline-primary" title="Save Updates" disabled="@isSaving"> <i class="bi bi-floppy"></i> Update</button>
+                        <a class="btn btn-outline-secondary" href="/users" title="Cancel"> <i class="bi bi-backspace"></i> Cancel</a>
+                    </div>
+                </EditForm>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    [SupplyParameterFromForm(FormName = "edit-user")]
+    private User? Model { get; set; }
+
+    private bool isLoading = true;
+    private bool isSaving;
+    private string? errorMessage;
+    private bool isSaved;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Model is null)
+        {
+            Model = await UserService.GetByIdAsync(Id);
+
+            if (Model is not null)
+            {
+                Model.FirstName ??= string.Empty;
+                Model.LastName ??= string.Empty;
+                Model.Email ??= string.Empty;
+            }
+        }
+
+        isLoading = false;
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        if (Model is null)
+        {
+            errorMessage = "User not found.";
+            return;
+        }
+
+        isSaving = true;
+        errorMessage = null;
+
+        var existingUser = await UserService.GetByIdAsync(Id);
+
+        if (existingUser is null)
+        {
+            isSaving = false;
+            errorMessage = "User not found.";
+            return;
+        }
+
+        existingUser.FirstName = Model.FirstName.Trim();
+        existingUser.LastName = Model.LastName.Trim();
+        existingUser.Email = Model.Email.Trim();
+        existingUser.DateOfBirth = Model.DateOfBirth;
+
+        var result = await UserService.UpdateAsync(existingUser);
+
+        isSaving = false;
+
+        if (!result.Success)
+        {
+            errorMessage = result.ErrorMessage;
+            return;
+        }
+        
+        isSaved = true;
+    }
+}

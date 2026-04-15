@@ -1,0 +1,102 @@
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components
+@page "/users/create"
+@inject IUserService UserService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Create User</PageTitle>
+
+<h1 class="h3 mb-4">Add User</h1>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-4">
+        @if (!string.IsNullOrWhiteSpace(errorMessage))
+        {
+            <div class="alert alert-danger">@errorMessage</div>
+        }
+        @if (isSaved)
+        {
+            <div class="alert alert-success d-flex justify-content-between align-items-center">
+                <span>User created successfully.</span>
+                <a href="/users" class="btn btn-sm btn-outline-success"> <i class="bi bi-backspace"></i> Back to Users</a>
+            </div>
+        }
+        else
+        {
+            <EditForm Model="Model" FormName="create-user" OnValidSubmit="HandleValidSubmit">
+                <DataAnnotationsValidator />
+                @* <ValidationSummary /> *@
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">First Name</label>
+                        <InputText class="form-control" @bind-Value="Model.FirstName" />
+                        <ValidationMessage For="() => Model.FirstName" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Last Name</label>
+                        <InputText class="form-control" @bind-Value="Model.LastName" />
+                        <ValidationMessage For="() => Model.LastName" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Email</label>
+                        <InputText class="form-control" @bind-Value="Model.Email" />
+                        <ValidationMessage For="() => Model.Email" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Date of Birth</label>
+                        <InputDate class="form-control" @bind-Value="Model.DateOfBirth" />
+                    </div>
+                </div>
+
+                <div class="mt-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-outline-primary" title="Save" disabled="@isSaving"><i class="bi bi-floppy"></i> Save</button>
+                    <a class="btn btn-outline-secondary" href="/users" title="Cancel"> <i class="bi bi-backspace"></i> Cancel</a>
+                </div>
+            </EditForm>
+        }
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromForm(FormName = "create-user")]
+    private User Model { get; set; } = new()
+    {
+        FirstName = string.Empty,
+        LastName = string.Empty,
+        Email = string.Empty
+    };
+
+    private bool isSaving;
+    private bool isSaved;
+    private string? errorMessage;
+
+    private async Task HandleValidSubmit()
+    {
+        try
+        {
+            isSaving = true;
+            errorMessage = null;
+
+            Model.FirstName = Model.FirstName.Trim();
+            Model.LastName = Model.LastName.Trim();
+            Model.Email = Model.Email.Trim().ToLower();
+
+            var result = await UserService.CreateAsync(Model);
+
+            if (!result.Success)
+            {
+                errorMessage = result.ErrorMessage;
+                return;
+            }
+            isSaved = true;
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+}

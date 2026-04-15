@@ -1,0 +1,105 @@
+@page "/users/delete/{Id:int}"
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Forms
+@inject IUserService UserService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Delete User</PageTitle>
+
+<h1 class="h3 mb-4">Delete User</h1>
+
+@if (isLoading)
+{
+    <p>Loading user...</p>
+}
+else if (model is null)
+{
+    <div class="alert alert-warning">User not found.</div>
+    <a class="btn btn-outline-secondary" href="/users">Back to Users</a>
+}
+else
+{
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+
+            @if (!string.IsNullOrWhiteSpace(errorMessage))
+            {
+                <div class="alert alert-danger">@errorMessage</div>
+            }
+
+            @if (isDeleted)
+            {
+                <div class="alert alert-success d-flex justify-content-between align-items-center">
+                    <span>User deleted successfully.</span>
+                    <a href="/users" class="btn btn-sm btn-outline-success"> <i class="bi bi-backspace"></i> Back to Users</a>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-danger d-flex justify-content-between align-items-center">
+                    <span>Are you sure you want to delete this user?</span>
+                </div>
+                <ul class="mb-4">
+                    <li><strong>Name:</strong> @model.FirstName @model.LastName</li>
+                    <li><strong>Email:</strong> @model.Email</li>
+                    <li><strong>Created At:</strong> @model.CreatedAt.ToString("yyyy-MM-dd")</li>
+                </ul>
+                <EditForm Model="deleteRequest" FormName="delete-user" OnValidSubmit="DeleteAsync">
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-outline-danger" disabled="@isDeleting">
+                            <i class="bi bi-trash"></i> Delete
+                        </button>
+                        <a class="btn btn-outline-secondary" href="/users">
+                            <i class="bi bi-backspace"></i> Cancel
+                        </a>
+                    </div>
+                </EditForm>                
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private User? model;
+    private bool isLoading = true;
+    private bool isDeleting;
+    private bool isDeleted;
+    private string? errorMessage;
+
+    private DeleteUserRequest deleteRequest = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        model = await UserService.GetByIdAsync(Id);
+        isLoading = false;
+    }
+
+    private async Task DeleteAsync()
+    {
+        try
+        {
+            isDeleting = true;
+            errorMessage = null;
+
+            var result = await UserService.DeleteAsync(Id);
+
+            if (!result.Success)
+            {
+                errorMessage = result.ErrorMessage;
+                return;
+            }
+            isDeleted = true;
+        }
+        finally
+        {
+            isDeleting = false;
+        }
+    }
+
+    private sealed class DeleteUserRequest
+    {
+    }
+}

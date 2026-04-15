@@ -1,0 +1,67 @@
+@page "/users/details/{Id:int}"
+@inject IUserService UserService
+
+<PageTitle>User Details</PageTitle>
+
+<h1 class="h3 mb-4">User Details</h1>
+
+@if (isLoading)
+{
+    <p>Loading user...</p>
+}
+else if (model is null)
+{
+    <div class="alert alert-warning">User not found.</div>
+    <a class="btn btn-outline-secondary" href="/users">Back to Users</a>
+}
+else
+{
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+            <dl class="row mb-0">
+                @* <dt class="col-sm-3">Id</dt>
+                <dd class="col-sm-9">@model.Id</dd> *@
+
+                <dt class="col-sm-3">First Name</dt>
+                <dd class="col-sm-9">@model.FirstName</dd>
+
+                <dt class="col-sm-3">Last Name</dt>
+                <dd class="col-sm-9">@model.LastName</dd>
+
+                <dt class="col-sm-3">Email</dt>
+                <dd class="col-sm-9">@model.Email</dd>
+
+                <dt class="col-sm-3">Date of Birth</dt>
+                <dd class="col-sm-9">@(model.DateOfBirth?.ToString("yyyy-MM-dd") ?? "-")</dd>
+
+                <dt class="col-sm-3">Created At (UTC)</dt>
+                <dd class="col-sm-9">@model.CreatedAt.ToUniversalTime().ToString("yyyy-MM-dd")</dd>
+            </dl>
+
+            <div class="mt-4 d-flex gap-2">
+                <a href="@($"/users/edit/{model.Id}")"
+                       class="btn btn-outline-primary"
+                       title="Edit User">
+                    <i class="bi bi-pencil-square"> Edit</i>
+                </a>
+                <a class="btn btn-outline-secondary" href="/users"
+                       title="Back to Users">
+                    <i class="bi bi-backspace"> Cancel</i>
+                </a>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private User? model;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        model = await UserService.GetByIdAsync(Id);
+        isLoading = false;
+    }
+}

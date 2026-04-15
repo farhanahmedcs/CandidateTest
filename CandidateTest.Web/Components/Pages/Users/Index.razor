@@ -1,0 +1,120 @@
+@page "/users"
+@inject IUserService UserService
+
+<PageTitle>Users</PageTitle>
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
+
+    <div>
+        <h1 class="h3 mb-1">Users</h1>
+        <p class="text-muted mb-0">Manage records in the Users table.</p>
+    </div>
+
+    <a href="/users/create" class="btn btn-outline-primary align-self-md-center">
+        <i class="bi bi-person-plus me-1"></i> Add User
+    </a>
+
+</div>
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+else if (isLoading)
+{
+    <p>Loading users...</p>
+}
+else if (users.Count == 0)
+{
+    <div class="alert alert-info">No users found.</div>
+}
+else
+{
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 table-responsive">
+                    <thead class="table-light">
+                        <tr>
+                            <th>First Name</th>
+                            <th>Last Name</th>
+                            <th>Email</th>
+                            <th>Date of Birth</th>
+                            <th>Created At (UTC)</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var user in users)
+                        {
+                            <tr>
+                                <td>@user.FirstName</td>
+                                <td>@user.LastName</td>
+                                <td>@user.Email</td>
+                                <td>@(user.DateOfBirth?.ToString("yyyy-MM-dd") ?? "-")</td>
+                                <td>@user.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                                <td class="text-end">
+                                    <div class="btn-group" role="group">
+                                        <a href="/users/details/@user.Id"
+                                               class="btn btn-sm btn-outline-secondary"
+                                               data-bs-toggle="tooltip"
+                                               data-bs-placement="top"
+                                               title="View Details">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+
+                                        <a href="/users/edit/@user.Id"
+                                               class="btn btn-sm btn-outline-primary"
+                                               data-bs-toggle="tooltip"
+                                               data-bs-placement="top"
+                                               title="Edit User">
+                                            <i class="bi bi-pencil-square"></i>
+                                        </a>
+
+                                        <a href="/users/delete/@user.Id"
+                                               class="btn btn-sm btn-outline-danger"
+                                               data-bs-toggle="tooltip"
+                                               data-bs-placement="top"
+                                               title="Delete User">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private IReadOnlyList<User> users = [];
+    private bool isLoading = true;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsersAsync();
+    }
+
+    private async Task LoadUsersAsync()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = null;
+
+            users = await UserService.GetAllAsync();
+        }
+        catch
+        {
+            errorMessage = "Unable to load users.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}
